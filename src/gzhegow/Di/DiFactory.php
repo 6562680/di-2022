@@ -15,7 +15,6 @@ use Gzhegow\Di\Domain\Provider\Provider;
 use Gzhegow\Di\Domain\Container\Container;
 use Gzhegow\Support\Filter as SupportFilter;
 use Gzhegow\Reflection\ReflectionInterface;
-use Gzhegow\Support\Assert as SupportAssert;
 use Gzhegow\Di\Domain\Registry\BindRegistry;
 use Gzhegow\Di\Domain\Registry\ItemRegistry;
 use Gzhegow\Di\Domain\Registry\SharedRegistry;
@@ -45,10 +44,6 @@ class DiFactory implements
      * @var null|SupportArr
      */
     protected $supportArr;
-    /**
-     * @var null|SupportAssert
-     */
-    protected $supportAssert;
     /**
      * @var null|SupportFilter
      */
@@ -132,7 +127,6 @@ class DiFactory implements
      *
      * @param null|ReflectionInterface      $reflection
      *
-     * @param null|SupportAssert            $supportAssert
      * @param null|SupportArr               $supportArr
      * @param null|SupportFilter            $supportFilter
      * @param null|SupportPhp               $supportPhp
@@ -161,7 +155,6 @@ class DiFactory implements
         ReflectionInterface $reflection = null,
 
         SupportArr $supportArr = null,
-        SupportAssert $supportAssert = null,
         SupportFilter $supportFilter = null,
         SupportPhp $supportPhp = null,
         SupportType $supportType = null,
@@ -189,7 +182,6 @@ class DiFactory implements
         $this->reflection = $reflection ?? $this->loadReflection();
 
         $this->supportArr = $supportArr ?? $this->loadSupportArr();
-        $this->supportAssert = $supportAssert ?? $this->loadSupportAssert();
         $this->supportFilter = $supportFilter ?? $this->loadSupportFilter();
         $this->supportPhp = $supportPhp ?? $this->loadSupportPhp();
         $this->supportType = $supportType ?? $this->loadSupportType();
@@ -312,25 +304,13 @@ class DiFactory implements
     }
 
     /**
-     * @return SupportAssert
-     */
-    protected function loadSupportAssert() : SupportAssert
-    {
-        return $this->supportAssert
-            ?? $this->getProxy(SupportAssert::class)
-            ?? new SupportAssert();
-    }
-
-    /**
      * @return SupportFilter
      */
     protected function loadSupportFilter() : SupportFilter
     {
         return $this->supportFilter
             ?? $this->getProxy(SupportFilter::class)
-            ?? new SupportFilter(
-                $this->loadSupportAssert()
-            );
+            ?? new SupportFilter();
     }
 
     /**
@@ -354,7 +334,7 @@ class DiFactory implements
         return $this->supportType
             ?? $this->getProxy(SupportType::class)
             ?? new SupportType(
-                $this->loadSupportAssert()
+                $this->loadSupportFilter()
             );
     }
 

@@ -42,22 +42,15 @@ use Gzhegow\Di\Tests\Services\Delegate\MyDelegateServiceDependsOnDelegates;
  */
 class DiTest extends AbstractTestCase
 {
-    public function getAssert() : Assert
-    {
-        return new Assert();
-    }
-
     public function getFilter() : Filter
     {
-        return new Filter(
-            $this->getAssert()
-        );
+        return new Filter();
     }
 
     public function getType() : Type
     {
         return new Type(
-            $this->getAssert()
+            $this->getFilter()
         );
     }
 

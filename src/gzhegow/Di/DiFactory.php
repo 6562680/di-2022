@@ -27,6 +27,7 @@ use Gzhegow\Di\Domain\Injector\InjectorInterface;
 use Gzhegow\Di\Domain\Provider\ProviderInterface;
 use Gzhegow\Di\Domain\Provider\ProviderFactoryInterface;
 
+
 /**
  * DiFactory
  */
@@ -298,8 +299,8 @@ class DiFactory implements
         return $this->arr
             ?? $this->getProxy(SupportArr::class)
             ?? new SupportArr(
-                $this->loadSupportPhp(),
-                $this->loadSupportType()
+                $this->loadSupportFilter(),
+                $this->loadSupportPhp()
             );
     }
 
@@ -321,8 +322,7 @@ class DiFactory implements
         return $this->supportPhp
             ?? $this->getProxy(SupportPhp::class)
             ?? new SupportPhp(
-                $this->loadSupportFilter(),
-                $this->loadSupportType(),
+                $this->loadSupportFilter()
             );
     }
 
@@ -347,8 +347,8 @@ class DiFactory implements
         return $this->reflection
             ?? $this->getProxy(ReflectionInterface::class)
             ?? new Reflection(
-                $this->loadSupportPhp(),
-                $this->loadSupportType()
+                $this->loadSupportFilter(),
+                $this->loadSupportPhp()
             );
     }
 

@@ -2,17 +2,11 @@
 
 namespace Gzhegow\Di;
 
-use Gzhegow\Support\Type;
-use Psr\Container\ContainerInterface;
 use Gzhegow\Di\Domain\Registry\BindRegistry;
 use Gzhegow\Di\Domain\Registry\ItemRegistry;
-use Gzhegow\Reflection\ReflectionInterface;
 use Gzhegow\Di\Domain\Registry\SharedRegistry;
 use Gzhegow\Di\Domain\Registry\ExtendRegistry;
-use Gzhegow\Di\Domain\Delegate\DelegateManager;
-use Gzhegow\Di\Domain\Provider\ProviderManager;
 use Gzhegow\Di\Domain\Node\NodeFactoryInterface;
-use Gzhegow\Di\Domain\Injector\InjectorInterface;
 use Gzhegow\Di\Exceptions\Runtime\OverflowException;
 
 /**
@@ -46,12 +40,6 @@ class DiManager
     /**
      * Constructor
      *
-     * @param ContainerInterface   $container
-     *
-     * @param Type                 $type
-     *
-     * @param ReflectionInterface  $reflection
-     *
      * @param NodeFactoryInterface $nodeFactory
      *
      * @param BindRegistry         $bindRegistry
@@ -59,10 +47,6 @@ class DiManager
      * @param ItemRegistry         $itemRegistry
      * @param SharedRegistry       $sharedRegistry
      *
-     * @param ProviderManager      $providerManager
-     * @param DelegateManager      $delegateManager
-     *
-     * @param InjectorInterface    $injector
      */
     public function __construct(
         NodeFactoryInterface $nodeFactory,

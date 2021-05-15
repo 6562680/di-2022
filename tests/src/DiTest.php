@@ -3,10 +3,9 @@
 namespace Gzhegow\Di\Tests;
 
 use Gzhegow\Support\Fs;
+use Gzhegow\Support\Str;
 use Gzhegow\Di\DiFactory;
-use Gzhegow\Support\Type;
 use Gzhegow\Support\Filter;
-use Gzhegow\Support\Assert;
 use Gzhegow\Di\Domain\Node\Node;
 use Gzhegow\Di\Tests\Services\MyAService;
 use Gzhegow\Di\Tests\Providers\MyProvider;
@@ -47,9 +46,9 @@ class DiTest extends AbstractTestCase
         return new Filter();
     }
 
-    public function getType() : Type
+    public function getStr() : Str
     {
-        return new Type(
+        return new Str(
             $this->getFilter()
         );
     }
@@ -58,7 +57,7 @@ class DiTest extends AbstractTestCase
     {
         return new Fs(
             $this->getFilter(),
-            $this->getType()
+            $this->getStr()
         );
     }
 

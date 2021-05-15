@@ -2,6 +2,7 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Support\Str as SupportStr;
 use Gzhegow\Di\Core\Assert;
 use Gzhegow\Di\Domain\Node\Node;
 use Gzhegow\Reflection\Reflection;
@@ -300,7 +301,8 @@ class DiFactory implements
             ?? $this->getProxy(SupportArr::class)
             ?? new SupportArr(
                 $this->loadSupportFilter(),
-                $this->loadSupportPhp()
+                $this->loadSupportPhp(),
+                $this->loadSupportStr(),
             );
     }
 
@@ -322,6 +324,18 @@ class DiFactory implements
         return $this->supportPhp
             ?? $this->getProxy(SupportPhp::class)
             ?? new SupportPhp(
+                $this->loadSupportFilter()
+            );
+    }
+
+    /**
+     * @return SupportStr
+     */
+    protected function loadSupportStr() : SupportStr
+    {
+        return $this->supportStr
+            ?? $this->getProxy(SupportStr::class)
+            ?? new SupportStr(
                 $this->loadSupportFilter()
             );
     }

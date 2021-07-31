@@ -1,8 +1,16 @@
+# >> directories
 /.idea
 /vendor
+# << directories
 
-.phpunit.*
-
+# >> files
 composer.lock
+# << files
 
+# >> wildcards
+.phpunit.*
+# << wildcards
+
+# >> rollback
 !.gitkeep
+# << rollback

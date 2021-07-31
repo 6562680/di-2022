@@ -3,7 +3,7 @@
   "license": "MIT",
   
   "name": "gzhegow/di",
-  "description": "Dependency-Injection Container",
+  "description": "Dependency-Injector",
   "authors": [
     {
       "name": "gzhegow",
@@ -14,20 +14,17 @@
   "require": {
     "php": ">=7.3",
     
-    "psr/container": "^1.0",
-    
-    "gzhegow/reflection": "~1.0",
-    "gzhegow/support": "~1.0"
+    "psr/container": "~1.0"
   },
   "require-dev": {
     "phpunit/phpunit": "~9.0",
     
-    "symfony/var-dumper": "~5.0"
+    "symfony/var-dumper": "^5.3"
   },
   
   "autoload": {
     "psr-4": {
-      "Gzhegow\\Di\\": "src/gzhegow/Di"
+      "Gzhegow\\Di\\": "src"
     }
   },
   "autoload-dev": {

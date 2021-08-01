@@ -23,43 +23,50 @@ $di = new Di();
 
 // run register() for provider
 $di->register(BDeferableProvider::class);
-$di->register(BBBootableProvider::class);
+$di->register(new BBBootableProvider($di));
 
-// copy `sources` files/directories of the module to `targets`
+// copy `sources` (vendor) files/directories of to `targets` (application)
 $di->discover();
+
+// update discovered config like in production
+$provider = $di->getProvider(BBBootableProvider::class);
+file_put_contents($provider->path('config'), '<?php return [ 3, 2, 1 ];');
 
 // run boot() for all registered bootable providers
 $di->boot();
 
 // get instances (this also run boot() for deferable providers)
-$b1 = $di->get(BInterface::class); 
+$b1 = $di->get(BInterface::class);
 $b2 = $di->get(BInterface::class);
 $bb = $di->get(BBInterface::class);
 
-// check instances 
+// check instances
 $this->assertInstanceOf(B::class, $b1);
 $this->assertInstanceOf(B::class, $b2);
 $this->assertInstanceOf(BB::class, $bb);
+
+// check discovered config (we updated it above)
+$this->assertEquals([ 3, 2, 1 ], $bb->getConfig());
 
 // check singleton
 $this->assertEquals($b1, $b2);
 
 // call method or function
-$fn = function (B $b, $hello, BB $bb, $world) {
+$fn = function (B $b, $hello, BBInterface $bb, $world) {
     return func_get_args();
 };
 $params = [
     '$hello' => 1,
     '$world' => 2,
-    
+
     // > keys could be `binds`
     // BInterface::class => $b1,
     // BBInterface::class => $bb,
-    
+
     // > keys could be argument names prefixed with $
     // '$b' => $b1,
     // '$bb' => $bb,
-        
+
     // > keys could be argument positions (integers)
     // 0 => $b1,
     // 2 => $bb

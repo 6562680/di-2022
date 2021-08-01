@@ -81,9 +81,4 @@ class DiTest extends TestCase
         // check arguments
         $this->assertEquals([ $b1, 1, $bb, 2 ], $result);
     }
-
-    public function hello(BInterface $a, $hello, BBInterface $b, $world)
-    {
-        return func_get_args();
-    }
 }

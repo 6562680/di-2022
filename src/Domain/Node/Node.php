@@ -1,7 +1,11 @@
 <?php
 
 
-namespace Gzhegow\Di;
+namespace Gzhegow\Di\Domain\Node;
+
+use Gzhegow\Di\Di;
+use Gzhegow\Di\Exceptions\Runtime\NotFoundException;
+use Gzhegow\Di\Exceptions\Runtime\AutowireException;
 
 
 /**
@@ -44,11 +48,15 @@ class Node implements NodeInterface
      * @param string $id
      *
      * @return mixed
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     public function get(string $id)
     {
-        $result = ( new Node($this->di, $this) )
-            ->make($id);
+        $node = new Node($this->di, $this);
+
+        $result = $node->make($id);
 
         return $result;
     }
@@ -70,9 +78,18 @@ class Node implements NodeInterface
      * @param array  $params
      *
      * @return mixed
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     public function make(string $abstract, array $params = [])
     {
+        if (! $this->has($abstract)) {
+            throw new NotFoundException(
+                'Unable to make: ' . $abstract
+            );
+        }
+
         $list[] = $this->abstract = $abstract;
 
         $current = $this;
@@ -80,8 +97,8 @@ class Node implements NodeInterface
             $list[] = $current->abstract;
 
             if ($current->abstract === $abstract) {
-                throw new \RuntimeException(
-                    'Recursion: ' . implode(' -> ', array_reverse($list))
+                throw new AutowireException(
+                    'Autowire recursion: ' . implode(' -> ', array_reverse($list))
                 );
             }
         }
@@ -91,9 +108,24 @@ class Node implements NodeInterface
             $current = $bound;
         }
 
-        $result = is_string($current)
-            ? new $current(...$this->autowireConstructor($current, $params))
-            : $this->call($current, [ 0 => $this ] + $params);
+        if (is_string($current) && class_exists($current)) {
+            $params = $this->autowireConstructor($current, $params);
+
+            try {
+                $result = new $current(...$params);
+            }
+            catch ( \Throwable $e ) {
+                throw new AutowireException('Unable to make: ' . $abstract, null, $e);
+            }
+
+        } elseif (is_callable($current)) {
+            $result = $this->call($current, [ 0 => $this ] + $params);
+
+        } else {
+            throw new NotFoundException(
+                'Unable to make: ' . $abstract
+            );
+        }
 
         return $result;
     }
@@ -103,6 +135,9 @@ class Node implements NodeInterface
      * @param array    $params
      *
      * @return mixed
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     public function call(callable $callable, array $params = [])
     {
@@ -113,8 +148,8 @@ class Node implements NodeInterface
             $list[] = $current->abstract;
 
             if ($current->abstract === $callable) {
-                throw new \RuntimeException(
-                    'Recursion: ' . implode(' -> ', array_reverse($list))
+                throw new AutowireException(
+                    'Autowire recursion: ' . implode(' -> ', array_reverse($list))
                 );
             }
         }
@@ -128,7 +163,7 @@ class Node implements NodeInterface
                 ?? new \ReflectionFunction($callable);
         }
         catch ( \ReflectionException $e ) {
-            throw new \RuntimeException($e->getMessage(), null, $e);
+            throw new AutowireException($e->getMessage(), null, $e);
         }
 
         $result = call_user_func_array($callable, $this->autowireCallable($reflectionFunction, $params));
@@ -142,6 +177,9 @@ class Node implements NodeInterface
      * @param array  $params
      *
      * @return array
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     protected function autowireConstructor(string $className, array $params = []) : array
     {
@@ -149,7 +187,7 @@ class Node implements NodeInterface
             $rc = new \ReflectionClass($className);
         }
         catch ( \ReflectionException $e ) {
-            throw new \RuntimeException($e->getMessage(), null, $e);
+            throw new AutowireException($e->getMessage(), null, $e);
         }
 
         $reflectionFunction = $rc->getConstructor();
@@ -177,6 +215,9 @@ class Node implements NodeInterface
      * @param array                       $params
      *
      * @return array
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     protected function autowireCallable(\ReflectionFunctionAbstract $reflectionFunction, array $params = []) : array
     {

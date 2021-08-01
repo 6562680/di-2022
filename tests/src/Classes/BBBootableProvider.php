@@ -3,7 +3,7 @@
 namespace Gzhegow\Di\Tests\Classes;
 
 use Gzhegow\Di\Di;
-use Gzhegow\Di\Node;
+use Gzhegow\Di\Domain\Node\Node;
 use Gzhegow\Di\Domain\Provider\BootableProviderInterface;
 
 

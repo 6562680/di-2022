@@ -1,6 +1,6 @@
 <?php
 
-namespace Gzhegow\Di;
+namespace Gzhegow\Di\Domain\Node;
 
 use Psr\Container\ContainerInterface;
 

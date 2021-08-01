@@ -2,9 +2,14 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Di\Domain\Node\Node;
 use Gzhegow\Di\Domain\Provider\ProviderInterface;
 use Gzhegow\Di\Domain\Provider\ProviderDecorator;
+use Gzhegow\Di\Exceptions\Runtime\NotFoundException;
+use Gzhegow\Di\Exceptions\Runtime\AutowireException;
+use Gzhegow\Di\Exceptions\Runtime\FilesystemException;
 use Gzhegow\Di\Domain\Provider\BootingProviderInterface;
+use Gzhegow\Di\Exceptions\Logic\InvalidArgumentException;
 use Gzhegow\Di\Domain\Provider\BootableProviderInterface;
 use Gzhegow\Di\Domain\Provider\BootableProviderDecorator;
 use Gzhegow\Di\Domain\Provider\DeferableProviderInterface;
@@ -190,6 +195,9 @@ class Di implements DiInterface
      * @param string $id
      *
      * @return mixed
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     public function get(string $id)
     {
@@ -260,11 +268,13 @@ class Di implements DiInterface
      * @param array  $tags
      *
      * @return static
+     *
+     * @throws NotFoundException
      */
     public function bind(string $abstract, string $concrete, array $tags = [])
     {
         if (! $this->has($concrete)) {
-            throw new \InvalidArgumentException(
+            throw new NotFoundException(
                 'Concrete not found: ' . $concrete
             );
         }
@@ -292,6 +302,7 @@ class Di implements DiInterface
      * @param array  $tags
      *
      * @return static
+     * @throws NotFoundException
      */
     public function singleton(string $abstract, string $concrete, array $tags = [])
     {
@@ -333,11 +344,15 @@ class Di implements DiInterface
      * @param string $aware
      *
      * @return static
+     *
+     * @throws InvalidArgumentException
      */
     public function aware(string $abstract, string $propertyName, string $aware)
     {
         if (! is_a($abstract, AwareInterface::class, true)) {
-            throw new \InvalidArgumentException('Abstract should implements ' . AwareInterface::class);
+            throw new InvalidArgumentException(
+                'Abstract should implements ' . AwareInterface::class
+            );
         }
 
         $this->aware[ $abstract ] = [ $propertyName, $aware ];
@@ -376,6 +391,7 @@ class Di implements DiInterface
      * @param string|object|ProviderInterface $provider
      *
      * @return static
+     * @throws FilesystemException
      */
     public function register($provider)
     {
@@ -432,6 +448,9 @@ class Di implements DiInterface
      * @param array  $params
      *
      * @return mixed
+     *
+     * @throws NotFoundException
+     * @throws AutowireException
      */
     public function make(string $abstract, array $params = [])
     {
@@ -489,6 +508,9 @@ class Di implements DiInterface
      * @param array    $params
      *
      * @return mixed
+     *
+     * @throws AutowireException
+     * @throws NotFoundException
      */
     public function call(callable $callable, array $params = [])
     {
@@ -513,6 +535,8 @@ class Di implements DiInterface
 
     /**
      * @return static
+     *
+     * @throws FilesystemException
      */
     public function discover()
     {
@@ -538,6 +562,8 @@ class Di implements DiInterface
      * @param DiscoverableProviderInterface $provider
      *
      * @return static
+     *
+     * @throws FilesystemException
      */
     protected function discoverProvider(DiscoverableProviderInterface $provider)
     {
@@ -567,13 +593,15 @@ class Di implements DiInterface
      * @param string $to
      *
      * @return static
+     *
+     * @throws FilesystemException
      */
     protected function copyDir(string $from, string $to)
     {
         /** @var \SplFileInfo $spl */
 
         if (! is_dir($from)) {
-            throw new \InvalidArgumentException('Dir not found: ' . $from);
+            throw new FilesystemException('Directory not found: ' . $from);
         }
 
         $it = new \RecursiveDirectoryIterator($from, \RecursiveDirectoryIterator::SKIP_DOTS);
@@ -600,11 +628,13 @@ class Di implements DiInterface
      * @param string $to
      *
      * @return static
+     *
+     * @throws FilesystemException
      */
     protected function copyFile(string $from, string $to)
     {
         if (! file_exists($from)) {
-            throw new \InvalidArgumentException('File not found: ' . $from);
+            throw new FilesystemException('File not found: ' . $from);
         }
 
         $dirname = dirname($to);

@@ -2,6 +2,7 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Di\Domain\Node\NodeInterface;
 use Gzhegow\Di\Domain\Provider\ProviderInterface;
 
 

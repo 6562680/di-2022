@@ -38,5 +38,18 @@ class DiTest extends TestCase
         $this->assertEquals($b1, $b2); // check singleton
 
         $this->assertInstanceOf(BB::class, $bb);
+
+        $expected = [ $b1, 1, $bb, 2 ];
+        $method = [ $this, 'hello' ];
+        $params = [
+            '$hello' => 1,
+            '$world' => 2,
+        ];
+        $this->assertEquals($expected, $di->call($method, $params));
+    }
+
+    public function hello(BInterface $a, $hello, BBInterface $b, $world)
+    {
+        return func_get_args();
     }
 }

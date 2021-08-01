@@ -73,8 +73,7 @@ class Node implements NodeInterface
      */
     public function make(string $abstract, array $params = [])
     {
-        $this->abstract = $abstract;
-        $list[] = $abstract;
+        $list[] = $this->abstract = $abstract;
 
         $current = $this;
         while ( $current = $current->parent ) {
@@ -92,9 +91,47 @@ class Node implements NodeInterface
             $current = $bound;
         }
 
-        $result = null
-            ?? ( is_callable($current) ? $current($this, $params) : null )
-            ?? new $current(...$this->autowireConstructor($current, $params));
+        $result = is_string($current)
+            ? new $current(...$this->autowireConstructor($current, $params))
+            : $this->call($current, [ 0 => $this ] + $params);
+
+        return $result;
+    }
+
+    /**
+     * @param callable $callable
+     * @param array    $params
+     *
+     * @return mixed
+     */
+    public function call(callable $callable, array $params = [])
+    {
+        $list[] = $this->abstract = $callable;
+
+        $current = $this;
+        while ( $current = $current->parent ) {
+            $list[] = $current->abstract;
+
+            if ($current->abstract === $callable) {
+                throw new \RuntimeException(
+                    'Recursion: ' . implode(' -> ', array_reverse($list))
+                );
+            }
+        }
+
+        try {
+            $reflectionFunction = null
+                ?? ( is_array($callable) && is_object($callable[ 0 ])
+                    ? new \ReflectionMethod($callable[ 0 ], $callable[ 1 ])
+                    : null
+                )
+                ?? new \ReflectionFunction($callable);
+        }
+        catch ( \ReflectionException $e ) {
+            throw new \RuntimeException($e->getMessage(), null, $e);
+        }
+
+        $result = call_user_func_array($callable, $this->autowireCallable($reflectionFunction, $params));
 
         return $result;
     }
@@ -115,58 +152,79 @@ class Node implements NodeInterface
             throw new \RuntimeException($e->getMessage(), null, $e);
         }
 
+        $reflectionFunction = $rc->getConstructor();
+
+        if ($reflectionFunction) {
+            $paramsAutowired = $this->autowireCallable($reflectionFunction, $params);
+
+        } else {
+            $paramsInt = [];
+
+            foreach ( $params as $i => $param ) {
+                if (is_int($i)) {
+                    $paramsInt[ $i ] = $param;
+                }
+            }
+
+            $paramsAutowired = $paramsInt;
+        }
+
+        return $paramsAutowired;
+    }
+
+    /**
+     * @param \ReflectionFunctionAbstract $reflectionFunction
+     * @param array                       $params
+     *
+     * @return array
+     */
+    protected function autowireCallable(\ReflectionFunctionAbstract $reflectionFunction, array $params = []) : array
+    {
+        $paramsAutowired = [];
+
         $paramsInt = [];
         $paramsString = [];
         foreach ( $params as $i => $param ) {
-            if (is_int($i)) {
-                $paramsInt[ $i ] = $param;
-            } else {
-                $paramsString[ $i ] = $param;
-            }
+            is_int($i)
+                ? ( $paramsInt[ $i ] = $param )
+                : ( $paramsString[ $i ] = $param );
         }
 
-        if (! $rm = $rc->getConstructor()) {
-            $paramsAutowired = $paramsInt;
+        foreach ( $reflectionFunction->getParameters() as $i => $rp ) {
+            $rpName = $rp->getName();
 
-        } else {
-            $paramsAutowired = [];
-
-            foreach ( $rm->getParameters() as $i => $rp ) {
-                $rpName = $rp->getName();
-
-                $rpTypeName = null;
-                $rpType = $rp->getType();
-                if (is_a($rpType, 'ReflectionNamedType')) {
-                    if (class_exists($rpType->getName()) || interface_exists($rpType->getName())) {
-                        $rpTypeName = $rpType->getName();
-                    }
+            $rpTypeName = null;
+            $rpType = $rp->getType();
+            if (is_a($rpType, 'ReflectionNamedType')) {
+                if (class_exists($rpType->getName()) || interface_exists($rpType->getName())) {
+                    $rpTypeName = $rpType->getName();
                 }
+            }
 
-                if ($rpTypeName && isset($paramsString[ $rpTypeName ])) {
-                    $value = $paramsString[ $rpTypeName ];
+            if ($rpTypeName && isset($paramsString[ $rpTypeName ])) {
+                $value = $paramsString[ $rpTypeName ];
 
-                    $paramsAutowired[ $i ] = $value;
-                    array_unshift($paramsInt, $value);
+                $paramsAutowired[ $i ] = $value;
+                array_unshift($paramsInt, $value);
 
-                } elseif (isset($paramsString[ '$' . $rpName ])) {
-                    $value = $paramsString[ '$' . $rpName ];
+            } elseif (isset($paramsString[ '$' . $rpName ])) {
+                $value = $paramsString[ '$' . $rpName ];
 
-                    $paramsAutowired[ $i ] = $value;
-                    array_unshift($paramsInt, $value);
+                $paramsAutowired[ $i ] = $value;
+                array_unshift($paramsInt, $value);
 
-                } elseif (isset($params[ $i ])) {
-                    $paramsAutowired[ $i ] = $params[ $i ];
+            } elseif (isset($params[ $i ])) {
+                $paramsAutowired[ $i ] = $params[ $i ];
 
-                } elseif ($rpTypeName && $this->has($rpTypeName)) {
-                    $instance = $this->get($rpTypeName);
+            } elseif ($rpTypeName && $this->has($rpTypeName)) {
+                $instance = $this->get($rpTypeName);
 
-                    $paramsAutowired[ $i ] = $instance;
-                    $paramsString[ $rpName ] = $instance;
-                    array_unshift($paramsInt, $instance);
+                $paramsAutowired[ $i ] = $instance;
+                $paramsString[ $rpName ] = $instance;
+                array_unshift($paramsInt, $instance);
 
-                } else {
-                    $paramsAutowired[ $i ] = null;
-                }
+            } else {
+                $paramsAutowired[ $i ] = null;
             }
         }
 

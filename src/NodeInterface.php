@@ -17,4 +17,12 @@ interface NodeInterface extends ContainerInterface
      * @return mixed
      */
     public function make(string $abstract, array $params = []);
+
+    /**
+     * @param callable $callable
+     * @param array    $params
+     *
+     * @return mixed
+     */
+    public function call(callable $callable, array $params = []);
 }

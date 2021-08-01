@@ -484,6 +484,21 @@ class Di implements DiInterface
         return $result;
     }
 
+    /**
+     * @param callable $callable
+     * @param array    $params
+     *
+     * @return mixed
+     */
+    public function call(callable $callable, array $params = [])
+    {
+        $rootNode = new Node($this);
+
+        $result = $rootNode->call($callable, $params);
+
+        return $result;
+    }
+
 
     /**
      * @param string $abstract

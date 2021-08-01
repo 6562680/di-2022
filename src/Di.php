@@ -214,6 +214,28 @@ class Di implements DiInterface
         return $result;
     }
 
+    /**
+     * @param string $abstract
+     *
+     * @return string[]
+     */
+    public function getTags(string $abstract) : array
+    {
+        return $this->tags[ $abstract ] ?? [];
+    }
+
+    /**
+     * @param string|ProviderInterface $provider
+     *
+     * @return null|ProviderInterface
+     */
+    public function getProvider($provider) : ProviderInterface
+    {
+        $provider = $this->hasProvider($provider);
+
+        return $provider;
+    }
+
 
     /**
      * @param string $id
@@ -245,6 +267,27 @@ class Di implements DiInterface
             : null;
 
         return $abstract;
+    }
+
+
+    /**
+     * @param string|ProviderInterface $provider
+     *
+     * @return null|ProviderInterface
+     */
+    public function hasProvider($provider) : ?ProviderInterface
+    {
+        $providerClass = is_object($provider)
+            ? get_class($provider)
+            : $provider;
+
+        if (! is_string($providerClass)) {
+            return null;
+        }
+
+        $provider = $this->providers[ $providerClass ] ?? null;
+
+        return $provider;
     }
 
 
@@ -407,7 +450,7 @@ class Di implements DiInterface
             ?? ( method_exists($instance, 'boot') ? new BootableProviderDecorator($this, $instance) : null )
             ?? new ProviderDecorator($this, $instance);
 
-        $providerClass = get_class($providerInstance);
+        $providerClass = get_class($instance);
 
         $this->providers[ $providerClass ] = $providerInstance;
 
@@ -519,17 +562,6 @@ class Di implements DiInterface
         $result = $rootNode->call($callable, $params);
 
         return $result;
-    }
-
-
-    /**
-     * @param string $abstract
-     *
-     * @return string[]
-     */
-    public function tagsFor(string $abstract) : array
-    {
-        return $this->tags[ $abstract ] ?? [];
     }
 
 

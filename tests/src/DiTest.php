@@ -28,10 +28,14 @@ class DiTest extends TestCase
 
         // run register() for provider
         $di->register(BDeferableProvider::class);
-        $di->register(BBBootableProvider::class);
+        $di->register(new BBBootableProvider($di));
 
-        // copy `sources` files/directories of the module to `targets`
+        // copy `sources` (vendor) files/directories of to `targets` (application)
         $di->discover();
+
+        // update discovered config like in production
+        $provider = $di->getProvider(BBBootableProvider::class);
+        file_put_contents($provider->path('config'), '<?php return [ 3, 2, 1 ];');
 
         // run boot() for all registered bootable providers
         $di->boot();
@@ -46,11 +50,11 @@ class DiTest extends TestCase
         $this->assertInstanceOf(B::class, $b2);
         $this->assertInstanceOf(BB::class, $bb);
 
+        // check discovered config (we updated it above)
+        $this->assertEquals([ 3, 2, 1 ], $bb->getConfig());
+
         // check singleton
         $this->assertEquals($b1, $b2);
-
-        // check discovered config
-        $this->assertEquals([ 3, 2, 1 ], $bb->getConfig());
 
         // call method or function
         $fn = function (B $b, $hello, BBInterface $bb, $world) {

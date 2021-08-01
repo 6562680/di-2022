@@ -138,7 +138,7 @@ interface DiInterface extends NodeInterface
      *
      * @return string[]
      */
-    public function tagsFor(string $abstract) : array;
+    public function getTags(string $abstract) : array;
 
 
     /**

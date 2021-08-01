@@ -616,7 +616,9 @@ class Di implements DiInterface
                     mkdir($dirname, 0775, true);
                 }
 
-                copy($spl->getRealpath(), $filepath);
+                if (! is_file($filepath)) {
+                    copy($spl->getRealpath(), $filepath);
+                }
             }
         }
 
@@ -642,7 +644,9 @@ class Di implements DiInterface
             mkdir($dirname, 0775, true);
         }
 
-        copy($from, $to);
+        if (! is_file($to)) {
+            copy($from, $to);
+        }
 
         return $this;
     }

@@ -45,12 +45,24 @@ $this->assertInstanceOf(BB::class, $bb);
 $this->assertEquals($b1, $b2);
 
 // call method or function
-$fn = function (B $a, $hello, BB $b, $world) {
+$fn = function (B $b, $hello, BB $bb, $world) {
     return func_get_args();
 };
 $params = [
     '$hello' => 1,
     '$world' => 2,
+    
+    // > keys could be `binds`
+    // BInterface::class => $b1,
+    // BBInterface::class => $bb,
+    
+    // > keys could be argument names prefixed with $
+    // '$b' => $b1,
+    // '$bb' => $bb,
+        
+    // > keys could be argument positions (integers)
+    // 0 => $b1,
+    // 2 => $bb
 ];
 $result = $di->call($fn, $params);
 

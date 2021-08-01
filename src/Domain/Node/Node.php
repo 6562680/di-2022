@@ -233,11 +233,13 @@ class Node implements NodeInterface
 
         foreach ( $reflectionFunction->getParameters() as $i => $rp ) {
             $rpName = $rp->getName();
+            $rpType = $rp->getType();
 
             $rpTypeName = null;
-            $rpType = $rp->getType();
-            if (is_a($rpType, 'ReflectionNamedType')) {
-                if (class_exists($rpType->getName()) || interface_exists($rpType->getName())) {
+            if ($rpType && ! $rpType->isBuiltin()) {
+                if (is_a($rpType, 'ReflectionNamedType')
+                    && ( class_exists($rpType->getName()) || interface_exists($rpType->getName()) )
+                ) {
                     $rpTypeName = $rpType->getName();
                 }
             }

@@ -17,12 +17,19 @@ abstract class AbstractDiscoverableProvider extends AbstractProvider
      */
     public function path(string $source) : string
     {
-        $targets = $this->targets();
-        $sources = $this->sources();
+        $path = null;
 
-        $path = null
-            ?? ( is_file($targets[ $source ]) ? realpath($targets[ $source ]) : null )
-            ?? realpath($sources[ $source ]);
+        $targets = $this->targets();
+
+        if (is_file($targets[ $source ])) {
+            $path = realpath($targets[ $source ]);
+        }
+
+        if (! $path) {
+            $sources = $this->sources();
+
+            $path = realpath($sources[ $source ]);
+        }
 
         return $path;
     }

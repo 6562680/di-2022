@@ -5,19 +5,15 @@ namespace Gzhegow\Di\Tests\Classes;
 use Gzhegow\Di\Di;
 use Gzhegow\Di\Domain\Node\Node;
 use Gzhegow\Di\Domain\Provider\BootableProviderInterface;
+use Gzhegow\Di\Domain\Provider\AbstractDiscoverableProvider;
 
 
 /**
  * BBBootableProvider
  */
-class BBBootableProvider implements BootableProviderInterface
+class BBBootableProvider extends AbstractDiscoverableProvider implements
+    BootableProviderInterface
 {
-    /**
-     * @var Di
-     */
-    protected $di;
-
-
     /**
      * Constructor
      *
@@ -25,7 +21,7 @@ class BBBootableProvider implements BootableProviderInterface
      */
     public function __construct(Di $di)
     {
-        $this->di = $di;
+        parent::__construct($di);
     }
 
 
@@ -43,13 +39,39 @@ class BBBootableProvider implements BootableProviderInterface
      */
     public function register()
     {
-        $this->di->factory(BBInterface::class, function (Node $di) {
-            $bb = $di->make(BB::class, [
-                '$hello' => 1,
-                '$world' => 2,
+        $this->di->factory(BBInterface::class, function (Node $current) {
+            $config = require $this->path('config');
+
+            $bb = $current->make(BB::class, [
+                '$hello'  => 1,
+                '$world'  => 2,
+                '$config' => $config,
             ]);
 
             return $bb;
         });
+    }
+
+
+    /**
+     * @return string[]
+     */
+    public function sources() : array
+    {
+        return [
+            'config'    => __DIR__ . '/../../storage/di/demo/config.php',
+            'directory' => __DIR__ . '/../../storage/di/demo/directory',
+        ];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function targets() : array
+    {
+        return [
+            'config'    => __DIR__ . '/../../storage/di/demo2/config.php',
+            'directory' => __DIR__ . '/../../storage/di/demo2/directory',
+        ];
     }
 }

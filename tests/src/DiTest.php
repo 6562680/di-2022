@@ -19,33 +19,63 @@ class DiTest extends TestCase
 {
     public function testDi()
     {
+        // create instance
         $di = new Di();
 
+        // static singleton
+        // $di = Di::getInstance(); // get
+        // Di::setInstance($di); // replace
+
+        // run register() for provider
         $di->register(BDeferableProvider::class);
         $di->register(BBBootableProvider::class);
 
-        $di->boot(); // run boot for bootable providers
-        $di->discover(); // copy source files to targets
+        // copy `sources` files/directories of the module to `targets`
+        $di->discover();
 
-        $b1 = $di->get(BInterface::class); // also run boot for deferable provider
-        $b2 = $di->get(BInterface::class); // also run boot for deferable provider
+        // run boot() for all registered bootable providers
+        $di->boot();
 
+        // get instances (this also run boot() for deferable providers)
+        $b1 = $di->get(BInterface::class);
+        $b2 = $di->get(BInterface::class);
         $bb = $di->get(BBInterface::class);
 
+        // check instances
         $this->assertInstanceOf(B::class, $b1);
         $this->assertInstanceOf(B::class, $b2);
-
-        $this->assertEquals($b1, $b2); // check singleton
-
         $this->assertInstanceOf(BB::class, $bb);
 
-        $expected = [ $b1, 1, $bb, 2 ];
-        $method = [ $this, 'hello' ];
+        // check singleton
+        $this->assertEquals($b1, $b2);
+
+        // check discovered config
+        $this->assertEquals([ 3, 2, 1 ], $bb->getConfig());
+
+        // call method or function
+        $fn = function (B $b, $hello, BBInterface $bb, $world) {
+            return func_get_args();
+        };
         $params = [
             '$hello' => 1,
             '$world' => 2,
+
+            // > keys could be `binds`
+            // BInterface::class => $b1,
+            // BBInterface::class => $bb,
+
+            // > keys could be argument names prefixed with $
+            // '$b' => $b1,
+            // '$bb' => $bb,
+
+            // > keys could be argument positions (integers)
+            // 0 => $b1,
+            // 2 => $bb
         ];
-        $this->assertEquals($expected, $di->call($method, $params));
+        $result = $di->call($fn, $params);
+
+        // check arguments
+        $this->assertEquals([ $b1, 1, $bb, 2 ], $result);
     }
 
     public function hello(BInterface $a, $hello, BBInterface $b, $world)

@@ -31,9 +31,9 @@ $di->discover();
 // run boot() for all registered bootable providers
 $di->boot();
 
-$b1 = $di->get(BInterface::class); // also run boot for deferable provider
-$b2 = $di->get(BInterface::class); // also run boot for deferable provider
-
+// get instances (this also run boot() for deferable providers)
+$b1 = $di->get(BInterface::class); 
+$b2 = $di->get(BInterface::class);
 $bb = $di->get(BBInterface::class);
 
 // check instances 

@@ -488,18 +488,18 @@ class Di implements DiInterface
 
     /**
      * @param string $abstract
-     * @param array  $params
+     * @param array  $parameters
      *
      * @return mixed
      *
      * @throws NotFoundException
      * @throws AutowireException
      */
-    public function make(string $abstract, array $params = [])
+    public function make(string $abstract, array $parameters = [])
     {
         $rootNode = new Node($this);
 
-        $result = $rootNode->make($abstract, $params);
+        $result = $rootNode->make($abstract, $parameters);
 
         // inject aware into properties
         if ($this->aware && $result instanceof AwareInterface) {
@@ -548,18 +548,18 @@ class Di implements DiInterface
 
     /**
      * @param callable $callable
-     * @param array    $params
+     * @param array    $parameters
      *
      * @return mixed
      *
      * @throws AutowireException
      * @throws NotFoundException
      */
-    public function call(callable $callable, array $params = [])
+    public function call(callable $callable, array $parameters = [])
     {
         $rootNode = new Node($this);
 
-        $result = $rootNode->call($callable, $params);
+        $result = $rootNode->call($callable, $parameters);
 
         return $result;
     }

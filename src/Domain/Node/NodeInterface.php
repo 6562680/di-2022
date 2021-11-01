@@ -12,17 +12,17 @@ interface NodeInterface extends ContainerInterface
 {
     /**
      * @param string $abstract
-     * @param array  $params
+     * @param array  $parameters
      *
      * @return mixed
      */
-    public function make(string $abstract, array $params = []);
+    public function make(string $abstract, array $parameters = []);
 
     /**
      * @param callable $callable
-     * @param array    $params
+     * @param array    $parameters
      *
      * @return mixed
      */
-    public function call(callable $callable, array $params = []);
+    public function call(callable $callable, array $parameters = []);
 }

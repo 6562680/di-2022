@@ -75,14 +75,14 @@ class Node implements NodeInterface
 
     /**
      * @param string $abstract
-     * @param array  $params
+     * @param array  $parameters
      *
      * @return mixed
      *
      * @throws AutowireException
      * @throws NotFoundException
      */
-    public function make(string $abstract, array $params = [])
+    public function make(string $abstract, array $parameters = [])
     {
         if (! $this->has($abstract)) {
             throw new NotFoundException(
@@ -109,17 +109,17 @@ class Node implements NodeInterface
         }
 
         if (is_string($current) && class_exists($current)) {
-            $params = $this->autowireConstructor($current, $params);
+            $parameters = $this->autowireConstructor($current, $parameters);
 
             try {
-                $result = new $current(...$params);
+                $result = new $current(...$parameters);
             }
             catch ( \Throwable $e ) {
                 throw new AutowireException('Unable to make: ' . $abstract, null, $e);
             }
 
         } elseif (is_callable($current)) {
-            $result = $this->call($current, [ 0 => $this ] + $params);
+            $result = $this->call($current, [ 0 => $this ] + $parameters);
 
         } else {
             throw new NotFoundException(
@@ -132,14 +132,14 @@ class Node implements NodeInterface
 
     /**
      * @param callable $callable
-     * @param array    $params
+     * @param array    $parameters
      *
      * @return mixed
      *
      * @throws AutowireException
      * @throws NotFoundException
      */
-    public function call(callable $callable, array $params = [])
+    public function call(callable $callable, array $parameters = [])
     {
         $list[] = $this->abstract = $callable;
 
@@ -166,7 +166,7 @@ class Node implements NodeInterface
             throw new AutowireException($e->getMessage(), null, $e);
         }
 
-        $result = call_user_func_array($callable, $this->autowireCallable($reflectionFunction, $params));
+        $result = call_user_func_array($callable, $this->autowireCallable($reflectionFunction, $parameters));
 
         return $result;
     }
@@ -174,14 +174,14 @@ class Node implements NodeInterface
 
     /**
      * @param string $className
-     * @param array  $params
+     * @param array  $parameters
      *
      * @return array
      *
      * @throws AutowireException
      * @throws NotFoundException
      */
-    protected function autowireConstructor(string $className, array $params = []) : array
+    protected function autowireConstructor(string $className, array $parameters = []) : array
     {
         try {
             $rc = new \ReflectionClass($className);
@@ -193,12 +193,12 @@ class Node implements NodeInterface
         $reflectionFunction = $rc->getConstructor();
 
         if ($reflectionFunction) {
-            $paramsAutowired = $this->autowireCallable($reflectionFunction, $params);
+            $paramsAutowired = $this->autowireCallable($reflectionFunction, $parameters);
 
         } else {
             $paramsInt = [];
 
-            foreach ( $params as $i => $param ) {
+            foreach ( $parameters as $i => $param ) {
                 if (is_int($i)) {
                     $paramsInt[ $i ] = $param;
                 }
@@ -212,65 +212,116 @@ class Node implements NodeInterface
 
     /**
      * @param \ReflectionFunctionAbstract $reflectionFunction
-     * @param array                       $params
+     * @param array                       $parameters
      *
      * @return array
      *
      * @throws AutowireException
      * @throws NotFoundException
      */
-    protected function autowireCallable(\ReflectionFunctionAbstract $reflectionFunction, array $params = []) : array
+    protected function autowireCallable(\ReflectionFunctionAbstract $reflectionFunction, array $parameters = []) : array
     {
+        $parameters = $parameters ?? [];
+
         $paramsAutowired = [];
 
         $paramsInt = [];
         $paramsString = [];
-        foreach ( $params as $i => $param ) {
-            is_int($i)
-                ? ( $paramsInt[ $i ] = $param )
-                : ( $paramsString[ $i ] = $param );
+        foreach ( $parameters as $i => $param ) {
+            if (is_int($i)) {
+                $paramsInt[ $i ] = $param;
+
+            } elseif (is_string($i) && strlen($i)) {
+                if (class_exists($i) || interface_exists($i)) {
+                    $paramsString[ $i ] = $param;
+
+                } else {
+                    $paramsString[ '$' . ltrim($i, '$') ] = $param;
+                }
+            }
         }
 
         foreach ( $reflectionFunction->getParameters() as $i => $rp ) {
             $rpName = $rp->getName();
-            $rpType = $rp->getType();
 
             $rpTypeName = null;
-            if ($rpType && ! $rpType->isBuiltin()) {
-                if (is_a($rpType, 'ReflectionNamedType')
-                    && ( class_exists($rpType->getName()) || interface_exists($rpType->getName()) )
+            $rpType = $rp->getType();
+            if ($rpType && ! $this->reflectionTypeIsBuiltin($rpType)) {
+                if ($this->reflectionTypeIsNamed($rpType)
+                    && ( 0
+                        || class_exists($rpType->getName())
+                        || interface_exists($rpType->getName())
+                    )
                 ) {
                     $rpTypeName = $rpType->getName();
                 }
             }
 
-            if ($rpTypeName && isset($paramsString[ $rpTypeName ])) {
-                $value = $paramsString[ $rpTypeName ];
+            if (isset($paramsString[ $paramKey = '$' . $rpName ])) {
+                $value = $paramsString[ $paramKey ];
 
                 $paramsAutowired[ $i ] = $value;
-                array_unshift($paramsInt, $value);
+                array_unshift($paramsInt, null);
 
-            } elseif (isset($paramsString[ '$' . $rpName ])) {
-                $value = $paramsString[ '$' . $rpName ];
+            } elseif ($rpTypeName) {
+                $instance = null;
 
-                $paramsAutowired[ $i ] = $value;
-                array_unshift($paramsInt, $value);
+                if (isset($paramsString[ $rpTypeName ])) {
+                    $instance = $paramsString[ $rpTypeName ];
 
-            } elseif (isset($params[ $i ])) {
-                $paramsAutowired[ $i ] = $params[ $i ];
+                } elseif (isset($paramsInt[ $i ])
+                    && $paramsInt[ $i ] instanceof $rpTypeName
+                ) {
+                    $instance = $paramsInt[ $i ];
+                    $paramsInt[ $i ] = null;
 
-            } elseif ($rpTypeName && $this->has($rpTypeName)) {
-                $instance = $this->get($rpTypeName);
+                } elseif ($this->has($rpTypeName)) {
+                    $instance = $this->get($rpTypeName);
+                }
 
                 $paramsAutowired[ $i ] = $instance;
-                $paramsString[ $rpName ] = $instance;
-                array_unshift($paramsInt, $instance);
+                array_unshift($paramsInt, null);
 
-            } else {
+            } elseif (isset($paramsInt[ $i ])) {
+                $paramsAutowired[ $i ] = $paramsInt[ $i ];
+                $paramsInt[ $i ] = null;
+
+            } elseif (! $rp->isVariadic()) {
                 $paramsAutowired[ $i ] = null;
             }
         }
 
+        $paramsAutowired += array_filter($paramsInt);
+
         return $paramsAutowired;
+    }
+
+
+    /**
+     * @param \ReflectionType $reflectionType
+     *
+     * @return bool
+     */
+    protected function reflectionTypeIsNamed(\ReflectionType $reflectionType) : bool
+    {
+        return is_a($reflectionType, 'ReflectionNamedType');
+    }
+
+    /**
+     * @param \ReflectionType $reflectionType
+     *
+     * @return bool
+     */
+    protected function reflectionTypeIsBuiltin(\ReflectionType $reflectionType) : bool
+    {
+        $isBuiltIn = false;
+
+        try {
+            $isBuiltIn = $reflectionType->{'isBuiltin'}();
+        }
+        catch ( \Throwable $e ) {
+        }
+
+        return $isBuiltIn;
     }
 }

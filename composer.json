@@ -1,9 +1,7 @@
 {
+  "name": "gzhegow/di-2022",
   "type": "library",
-  "license": "MIT",
   
-  "name": "gzhegow/di",
-  "description": "Dependency-Injector",
   "authors": [
     {
       "name": "gzhegow",
@@ -12,7 +10,7 @@
   ],
   
   "require": {
-    "php": ">=7.3",
+    "php": "^7.3|^8.0",
     
     "psr/container": "~1.0"
   },
